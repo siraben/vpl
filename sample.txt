@@ -1,0 +1,13 @@
+-- Up, right, left, down (1): ↑ → ← ↓
+-- Clockwise, anti clockwise: ↻ ↺
+-- Pen up, pen down: ○ ●
+
+right = [ ↻ 90 ]
+left  = [ ↺ 90 ]
+down  = [ ↻ 180 ]
+□ n = [ ●, ↑ n, right 90, ↑ n, right 90, ↑ n, right 90, ↑ n, ○ ]
+
+main = [ □ 1 ]
+
+
+foo x = [●, ↑ 5, ○]  
