@@ -71,10 +71,10 @@ parseFunDecl = do
   FunDecl name args <$> parseBody
 
 parseFunCall :: Parser Stmt
-parseFunCall = CA.liftA2 FunCall (tok ident) (sepEndBy parseExpr space)
+parseFunCall = CA.liftA2 FunCall (tok ident) (many parseExpr)
 
 parseExpr :: Parser Expr
-parseExpr = ((Lit <$> integer) <|> (Var <$> ident)) <?> "expr"
+parseExpr = tok ((Lit <$> integer) <|> (Var <$> ident)) <?> "expr"
 
 parseLoop :: Parser Stmt
 parseLoop = do

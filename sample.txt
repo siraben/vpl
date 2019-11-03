@@ -1,10 +1,12 @@
--- Up, right, left, down (1): ↑ → ← ↓
--- Clockwise, anti clockwise: ↻ ↺
+-- Go forward: ↑
+-- Clockwise, anti-clockwise rotation: ↻ ↺
 -- Pen up, pen down: ○ ●
 
 right = [ ↻ 90 ]
 left  = [ ↺ 90 ]
-down  = [ ↻ 180 ]
+-- Draw a square
 □ n = [ loop 3 [↑ n, right], ↑ n, right]
-main = [ □ 60, right, □ 70, right, □ 80, ●,
+-- Draw a triangle
+△ n = [ ↻ 30, ↑ n, ↻ 120, ↑ n, ↻ 120, ↑ n, right ]
+main = [ ●, △ 60, □ 60, right, □ 70, right, □ 80, ↑ 150,
          loop 100 [↑ 50, ↻ 59]]

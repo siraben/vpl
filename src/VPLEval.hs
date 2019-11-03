@@ -125,7 +125,9 @@ evProg l =
   case finalEnv Map.!? "main" of
     Nothing -> Left "Must have a main routine"
     Just (Function t) ->
-      Right $ third $ runRWS (runExceptT (runTurtle (t []))) finalEnv initState
+      case runRWS (runExceptT (runTurtle (t []))) finalEnv initState of
+        (Left e, _, _) -> Left e
+        (_, _, p) -> Right p
   where
     finalEnv =
       foldl'
@@ -134,9 +136,9 @@ evProg l =
         l
 
 showTurtle :: Either String Picture -> IO ()
-showTurtle (Right p) = display (InWindow "Turtle" (200, 200) (10, 10)) white p
-showTurtle (Left err) =
-  display (InWindow "Turtle" (200, 200) (10, 10)) white (text err)
+showTurtle (Right p) = display FullScreen white (scale 3 3 p)
+showTurtle (Left err) = do
+  putStrLn ("Error: " ++ err)
 
 initState :: TurtleST
 initState = TurtleST {pos = (0, 0), direction = -(pi / 2), pen = Up}
