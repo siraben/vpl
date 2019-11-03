@@ -136,7 +136,7 @@ evProg l =
         l
 
 showTurtle :: Either String Picture -> IO ()
-showTurtle (Right p) = display FullScreen white (scale 3 3 p)
+showTurtle (Right p) = display (InWindow "VPL" (200, 200) (10, 10)) white (scale 3 3 p)
 showTurtle (Left err) = do
   putStrLn ("Error: " ++ err)
 
