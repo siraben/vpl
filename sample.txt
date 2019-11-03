@@ -5,5 +5,6 @@
 right = [ ↻ 90 ]
 left  = [ ↺ 90 ]
 down  = [ ↻ 180 ]
-□ n = [ ●, ↑ n, right, ↑ n, right, ↑ n, right, ↑ n, ○]
-main = [ □ 50 ]
+□ n = [ loop 3 [↑ n, right], ↑ n, right]
+main = [ □ 60, right, □ 70, right, □ 80, ●,
+         loop 100 [↑ 50, ↻ 59]]
