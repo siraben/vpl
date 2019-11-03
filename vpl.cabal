@@ -15,13 +15,20 @@ maintainer:          bensiraphob@gmail.com
 -- category:
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
-
+optimization:        true
 executable vpl
   main-is:             Main.hs
   -- other-modules:
   -- other-extensions:
   build-depends:       base,
-                       parsec,
-                       gloss
+                       containers >= 0.6.0.1,
+                       gloss,
+                       mtl,
+                       parsec
   -- hs-source-dirs:
   default-language:    Haskell2010
+
+nix:
+  enable: true
+  packages: [libGL libGLU freeglut mesa ]
+

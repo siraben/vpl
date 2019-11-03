@@ -5,9 +5,5 @@
 right = [ ↻ 90 ]
 left  = [ ↺ 90 ]
 down  = [ ↻ 180 ]
-□ n = [ ●, ↑ n, right 90, ↑ n, right 90, ↑ n, right 90, ↑ n, ○ ]
-
-main = [ □ 1 ]
-
-
-foo x = [●, ↑ 5, ○]  
+□ n = [ ●, ↑ n, right, ↑ n, right, ↑ n, right, ↑ n, ○]
+main = [ □ 50 ]
