@@ -44,9 +44,10 @@ evalStmt (FunCall n a) u = do
   case f of
     V _ -> throwError "Cannot apply value"
     Function f -> f (Lit <$> args)
-evalStmt (Loop n b) u = replicateM_ n (mapM_ (`evalStmt` u) b)
+evalStmt (Loop n b) u = do
+  x <- evalExpr n u
+  replicateM_ (floor x) (mapM_ (`evalStmt` u) b)
 
--- evalStmt (TurnLeft e) = e 
 lineFrom :: Point -> Turtle ()
 lineFrom p = do
   curr <- gets pos
@@ -136,7 +137,8 @@ evProg l =
         l
 
 showTurtle :: Either String Picture -> IO ()
-showTurtle (Right p) = display (InWindow "VPL" (200, 200) (10, 10)) white (scale 3 3 p)
+showTurtle (Right p) =
+  display (InWindow "VPL" (200, 200) (10, 10)) white (scale 3 3 p)
 showTurtle (Left err) = do
   putStrLn ("Error: " ++ err)
 

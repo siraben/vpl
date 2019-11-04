@@ -5,6 +5,7 @@ import Data.Char
 import System.IO
 import Text.ParserCombinators.Parsec hiding (space, spaces)
 import VPLEval
+import VPLPretty
 import VPLTypes
 
 a <||> b = try a <|> b
@@ -60,7 +61,7 @@ ident =
 parseBody :: Parser Body
 parseBody = do
   symb "["
-  x <- sepBy1 parseStmt (symb ",")
+  x <- sepBy parseStmt (symb ",")
   symb "]"
   return x
 
@@ -79,8 +80,8 @@ parseExpr = tok ((Lit <$> integer) <|> (Var <$> ident)) <?> "expr"
 parseLoop :: Parser Stmt
 parseLoop = do
   symb "loop"
-  x <- integer
-  Loop (round x) <$> parseBody
+  x <- parseExpr
+  Loop x <$> parseBody
 
 -- do { x <- integer; return (Lit x)}
 -- (integer >>= (\x -> return (Lit x)))
@@ -104,6 +105,6 @@ parseAndShow s = do
   s <- hGetContents sample
   let result = parse parseProg "" s
   case result of
-    Right res -> mapM_ print res >> showTurtle (evProg res)
+    Right res -> mapM_ (putStrLn . renderFunDecl) res >> showTurtle (evProg res)
     Left err -> print err
   hClose sample

@@ -1,24 +1,26 @@
-v = [●, ↺ 70, loop 27 [↺ 2, ↑ 10], ↻ 110, ↑ 75, ↻90,↑130,↺150,loop 15[↑ 10, ↻ 1], loop 15[↑ 1, ↻ 1], loop 2[↑ 1, ↻ 3], loop 4[↑ 2, ↻ 4], loop 5[↑ 2, ↻ 5], ↑15, 
-↻110, loop 10[↑ 20, ↺ 1], loop 7[↑ 14, ↺ 1], ↻ 71, ↑ 90 
-]
+v = [●, ↺ 70, loop 27 [↺ 2, ↑ 10], ↻ 110, ↑ 75, ↻ 90, ↑ 130, 
+     ↺ 150, loop 15 [↑ 10, ↻ 1], loop 15 [↑ 1, ↻ 1], loop 2 [↑ 1, ↻ 3], 
+     loop 4 [↑ 2, ↻ 4], loop 5 [↑ 2, ↻ 5], ↑ 15, ↻ 110, 
+     loop 10 [↑ 20, ↺ 1], loop 7 [↑ 14, ↺ 1], ↻ 71, ↑ 90]
 left n = [↺ 90, ↑ n, ↻ 90]
 right n = [↻ 90, ↑ n, ↺ 90]
-nop = [↑0]
-roundHalfLeftTurn = [ loop 4[↑ 1, ↺ 8], loop 1[↑ 1, ↺ 8], loop 1[↑ 2, ↺ 5]]  --longer turn version: roundHalfLeftTurn = [ loop 8[↑ 1, ↺ 1], loop 3[↑ 1, ↺ 3], loop 7[↑ 2, ↺ 4]]
-roundHalfRightTurn = [ loop 8[↑ 1, ↻ 1], loop 3[↑ 1, ↻ 3], loop 7[↑ 2, ↻ 4]]
+roundHalfLeftTurn = [loop 4 [↑ 1, ↺ 8], loop 1 [↑ 1, ↺ 8], 
+                     loop 1 [↑ 2, ↺ 5]]
+roundHalfRightTurn = [loop 8 [↑ 1, ↻ 1], loop 3 [↑ 1, ↻ 3], 
+                      loop 7 [↑ 2, ↻ 4]]
 roundRightTurn = [roundHalfRightTurn, roundHalfRightTurn]
 roundLeftTurn = [roundHalfLeftTurn, roundHalfLeftTurn]
-star n = [loop 5 [↑n, ↻144]]
-hLeft = [↺ 235, ↑340, ●, ↺ 210, ↑22, ○, ↑ 62, ●, ↑218]
-hLeftBottom = [↺ 90, ↑55, nop]
-hMiddleBottom = [↺ 90, ↑97, ↻ 90, ↑45, ↻ 90, ↑105]
-hRightBottom= [↺ 90, ↑45, nop]
-hRight= [roundLeftTurn, ↑197, ○,left 20,  ●, star 100,○, right 20, ●, ↑85]
-hRightTop=[↺ 90, ↑50, nop]
-hMiddleTop= [nop, ↺ 90, ↑125, nop, ↻ 90, ↑45, ↻ 90, ↑144]
-hLeftTop= [↺ 90, ↑59, nop]
-h = [○, hLeft, hLeftBottom, hMiddleBottom, hRightBottom, hRight, hRightTop, hMiddleTop, hLeftTop]
+star n = [loop 5 [↑ n, ↻ 144]]
+hLeft = [↺ 235, ↑ 340, ●, ↺ 210, ↑ 22, ○, ↑ 62, ●, ↑ 218]
+hLeftBottom = [↺ 90, ↑ 55]
+hMiddleBottom = [↺ 90, ↑ 97, ↻ 90, ↑ 45, ↻ 90, ↑ 105]
+hRightBottom = [↺ 90, ↑ 45]
+hRight = [roundLeftTurn, ↑ 197, ○, left 20, ●, star 100, ○, 
+          right 20, ●, ↑ 85]
+hRightTop = [↺ 90, ↑ 50]
+hMiddleTop = [↺ 90, ↑ 125, ↻ 90, ↑ 45, ↻ 90, ↑ 144]
+hLeftTop = [↺ 90, ↑ 59]
+h = [○, hLeft, hLeftBottom, hMiddleBottom, hRightBottom, hRight, 
+     hRightTop, hMiddleTop, hLeftTop]
 backward n = [↻ 180, ↑ n, ↻ 180]
 main = [backward 75, ↺ 90, backward 100, ↻ 90, v, h]
-
---star 50

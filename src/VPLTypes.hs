@@ -33,7 +33,7 @@ data Stmt
   | PenUp
   | PenDown
   | FunCall FunName [Expr]
-  | Loop Int Body
+  | Loop Expr Body
   deriving (Show)
 
 data PenStatus

@@ -1,8 +1,9 @@
 module Main where
-import VPLParser
+
+import Prelude
 import System.Environment
-
-
+import VPLParser
+import VPLTypes
 
 main = do
   l <- getArgs
