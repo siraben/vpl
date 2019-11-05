@@ -13,7 +13,6 @@ a <||> b = try a <|> b
 -- |Transforms a parser into one that also consumes trailing whitespace.
 tok p = p <* space
 
--- parens p = lparen >> p <* rparen
 eol = char '\n'
 
 comment = symb "--" >> many (noneOf "\n") >> eol
@@ -35,12 +34,11 @@ nat = read <$> many1 digit
 natural = tok nat
 
 -- |Parse a negative number.
-negnat = string "-" >> (-) 0 <$> natural
+negnat = char '-' >> (-) 0 <$> natural
 
 integer = negnat <|> natural
 
--- initp x = x `elem` concat [['a' .. 'z'], ['A' .. 'Z']] -- , "!$%&*/:<>?_~"]
-initp x = isAlpha x || (not (isSpace x) && notElem x "○●[↑↻↺,=]-")
+initp x = isAlpha x || (not (isSpace x) && notElem x "()○●[↑↻↺,=]-")
 
 digitp x = x `elem` ['0' .. '9']
 
@@ -56,8 +54,8 @@ ident =
   string "-" <|>
   try (string "...") <?> "identifier"
 
--- data FunDecl = FunDecl FunName Args Body
---              deriving Show
+identifier = tok ident
+
 parseBody :: Parser Body
 parseBody = do
   symb "["
@@ -67,15 +65,32 @@ parseBody = do
 
 parseFunDecl :: Parser FunDecl
 parseFunDecl = do
-  (name:args) <- sepEndBy1 ident space
+  (name:args) <- many1 identifier
   symb "="
   FunDecl name args <$> parseBody
 
 parseFunCall :: Parser Stmt
 parseFunCall = CA.liftA2 FunCall (tok ident) (many parseExpr)
 
+parseFactor :: Parser Expr
+parseFactor =
+  (Lit <$> integer) <|> (Var <$> identifier) <|>
+  (symb "(" >> parseExpr <* symb ")")
+
+parseTerm :: Parser Expr
+parseTerm =
+  (do a <- parseFactor
+      op <- (symb "*" >> return Mul) <|> (symb "/" >> return Div)
+      op a <$> parseFactor) <||>
+  parseFactor
+
 parseExpr :: Parser Expr
-parseExpr = tok ((Lit <$> integer) <|> (Var <$> ident)) <?> "expr"
+parseExpr =
+  ((do a <- parseTerm
+       symb "+"
+       Add a <$> parseTerm) <||>
+   parseTerm) <?>
+  "expression"
 
 parseLoop :: Parser Stmt
 parseLoop = do
@@ -83,21 +98,30 @@ parseLoop = do
   x <- parseExpr
   Loop x <$> parseBody
 
--- do { x <- integer; return (Lit x)}
--- (integer >>= (\x -> return (Lit x)))
--- (a -> b) -> f a -> f b
--- (Float -> Expr) -> Parser Float -> Parser Expr
+parseBExpr :: Parser BExpr
+parseBExpr = (symb "zero?" >> (IsZero <$> parseExpr)) <?> "boolean expression"
+
+parseIf :: Parser Stmt
+parseIf =
+  (do symb "if"
+      p <- parseBExpr
+      symb "then"
+      c <- parseBody
+      symb "else"
+      a <- parseBody
+      If p c <$> parseBody) <?>
+  "if statement"
+
 parseStmt :: Parser Stmt
 parseStmt =
   ((symb "○" >> return PenUp) <|> (symb "●" >> return PenDown) <|>
    (symb "↑" >> (Forward <$> parseExpr)) <|>
    (symb "↻" >> (TurnRight <$> parseExpr)) <|>
    (symb "↺" >> (TurnLeft <$> parseExpr)) <|>
-   parseLoop <||> parseFunCall) <?>
+   parseIf <||> parseLoop <||> parseFunCall) <?>
   "statement"
 
--- parseProg :: String -> Either ParseError [FunDecl]
-parseProg = space >> parseFunDecl `sepBy1` space <* eof
+parseProg = space >> parseFunDecl `sepBy` space <* eof
 
 parseAndShow :: FilePath -> IO ()
 parseAndShow s = do

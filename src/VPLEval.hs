@@ -9,6 +9,7 @@ import qualified Data.Map.Strict as Map
 import Graphics.Gloss
 import qualified Graphics.Gloss.Data.Point.Arithmetic as P
 import Graphics.Gloss.Data.Vector
+import VPLPretty
 import VPLTypes
 
 gameWindow :: Display
@@ -26,7 +27,18 @@ evalExpr (Var s) e = do
   v <- envLookup s e
   case v of
     V f -> return f
-    _ -> throwError "Cannot treat function as expression"
+    _ -> throwError ("Cannot treat function as expression in " ++ s)
+evalExpr (Add a b) e = liftM2 (+) (evalExpr a e) (evalExpr b e)
+evalExpr (Sub a b) e = liftM2 (-) (evalExpr a e) (evalExpr b e)
+evalExpr (Mul a b) e = liftM2 (*) (evalExpr a e) (evalExpr b e)
+evalExpr x@(Div a b) e = do
+  a <- evalExpr a e
+  b <- evalExpr b e
+  if b == 0
+    then throwError ("Error: divide by 0 in (" ++ render (prettyExpr x) ++ ")")
+    else return (a / b)
+
+evalBExpr (IsZero x) e = (== 0) . floor <$> evalExpr x e
 
 penUp = modify (\s -> s {pen = Up})
 
@@ -38,15 +50,22 @@ evalStmt PenDown _ = penDown
 evalStmt (Forward e) u = evalExpr e u >>= moveForward
 evalStmt (TurnLeft e) u = evalExpr e u >>= rotateTurtle
 evalStmt (TurnRight e) u = evalExpr e u >>= rotateTurtle <$> negate
-evalStmt (FunCall n a) u = do
+evalStmt s@(FunCall n a) u = do
   f <- envLookup n u
   args <- mapM (`evalExpr` u) a
   case f of
-    V _ -> throwError "Cannot apply value"
+    V _ ->
+      throwError
+        ("Cannot apply value in function call (" ++ render (prettyStmt s) ++ ")")
     Function f -> f (Lit <$> args)
 evalStmt (Loop n b) u = do
   x <- evalExpr n u
   replicateM_ (floor x) (mapM_ (`evalStmt` u) b)
+evalStmt (If p c a) u = do
+  b <- evalBExpr p u
+  if b
+    then mapM_ (`evalStmt` u) c
+    else mapM_ (`evalStmt` u) a
 
 lineFrom :: Point -> Turtle ()
 lineFrom p = do
@@ -108,12 +127,15 @@ evFunDecl (FunDecl name args body) u =
     if length unEvArgs /= argLen
       then throwError
              (concat
-                [ "Invalid number of arguments to: "
+                [ "Invalid number of arguments to "
                 , name
                 , ", expected "
                 , show argLen
                 , " but got "
                 , show $ length unEvArgs
+                , " in ("
+                , render (prettyStmt (FunCall name unEvArgs))
+                , ")"
                 ])
       else do
         realArgs <- mapM (`evalExpr` u) unEvArgs
@@ -139,8 +161,7 @@ evProg l =
 showTurtle :: Either String Picture -> IO ()
 showTurtle (Right p) =
   display (InWindow "VPL" (200, 200) (10, 10)) white (scale 3 3 p)
-showTurtle (Left err) = do
-  putStrLn ("Error: " ++ err)
+showTurtle (Left err) = putStrLn ("Error: " ++ err)
 
 initState :: TurtleST
 initState = TurtleST {pos = (0, 0), direction = -(pi / 2), pen = Up}

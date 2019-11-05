@@ -24,6 +24,14 @@ data FunDecl =
 data Expr
   = Var String
   | Lit Float
+  | Add Expr Expr
+  | Mul Expr Expr
+  | Sub Expr Expr
+  | Div Expr Expr
+  deriving (Show)
+
+data BExpr =
+  IsZero Expr
   deriving (Show)
 
 data Stmt
@@ -34,6 +42,7 @@ data Stmt
   | PenDown
   | FunCall FunName [Expr]
   | Loop Expr Body
+  | If BExpr Body Body
   deriving (Show)
 
 data PenStatus
