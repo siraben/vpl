@@ -63,9 +63,7 @@ evalStmt (Loop n b) u = do
   replicateM_ (floor x) (mapM_ (`evalStmt` u) b)
 evalStmt (If p c a) u = do
   b <- evalBExpr p u
-  if b
-    then mapM_ (`evalStmt` u) c
-    else mapM_ (`evalStmt` u) a
+  mapM_ (`evalStmt` u) (if b then c else a)
 
 lineFrom :: Point -> Turtle ()
 lineFrom p = do

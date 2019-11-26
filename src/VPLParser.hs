@@ -109,12 +109,13 @@ parseIf =
       c <- parseBody
       symb "else"
       a <- parseBody
-      If p c <$> parseBody) <?>
+      return (If p c a)) <?>
   "if statement"
 
 parseStmt :: Parser Stmt
 parseStmt =
-  ((symb "○" >> return PenUp) <|> (symb "●" >> return PenDown) <|>
+  ((symb "○" >> return PenUp) <|>
+   (symb "●" >> return PenDown) <|>
    (symb "↑" >> (Forward <$> parseExpr)) <|>
    (symb "↻" >> (TurnRight <$> parseExpr)) <|>
    (symb "↺" >> (TurnLeft <$> parseExpr)) <|>
