@@ -25,7 +25,11 @@ prettyStmt (TurnRight e) = text "↻" <+> prettyExpr e
 prettyStmt (Forward e) = text "↑" <+> prettyExpr e
 prettyStmt PenUp = text "○"
 prettyStmt PenDown = text "●"
-prettyStmt (FunCall name es) = text name <+> fsep (map prettyExpr es)
+prettyStmt (FunCall name es) =
+  text name <+>
+  (if es == []
+     then mempty
+     else fsep (map (\x -> text "(" <> prettyExpr x <> text ")") es))
 prettyStmt (Loop e b) = text "loop" <+> prettyExpr e <+> prettyBody b
 prettyStmt (If p c a) =
   fsep

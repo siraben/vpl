@@ -15,12 +15,12 @@ hLeft = [↺ 235, ↑ 340, ●, ↺ 210, ↑ 22, ○, ↑ 62, ●, ↑ 218]
 hLeftBottom = [↺ 90, ↑ 55]
 hMiddleBottom = [↺ 90, ↑ 97, ↻ 90, ↑ 45, ↻ 90, ↑ 105]
 hRightBottom = [↺ 90, ↑ 45]
-hRight = [roundLeftTurn, ↑ 197, ○, left 20, ●, star 100, ○, 
-          right 20, ●, ↑ 85]
+hRight = [roundLeftTurn, ↑ 197, ○, left (20), ●, star (100), ○, 
+          right (20), ●, ↑ 85]
 hRightTop = [↺ 90, ↑ 50]
 hMiddleTop = [↺ 90, ↑ 125, ↻ 90, ↑ 45, ↻ 90, ↑ 144]
 hLeftTop = [↺ 90, ↑ 59]
 h = [○, hLeft, hLeftBottom, hMiddleBottom, hRightBottom, hRight, 
      hRightTop, hMiddleTop, hLeftTop]
 backward n = [↻ 180, ↑ n, ↻ 180]
-main = [backward 75, ↺ 90, backward 100, ↻ 90, v, h]
+main = [backward (75), ↺ 90, backward (100), ↻ 90, v, h]

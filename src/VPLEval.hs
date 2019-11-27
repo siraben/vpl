@@ -108,8 +108,6 @@ square n = do
   rotateTurtle 90
   penUp
 
-third (_, _, x) = x
-
 runGame :: Turtle a -> Picture
 runGame t =
   case runRWS (runExceptT (runTurtle t)) mempty initState of

@@ -28,7 +28,7 @@ data Expr
   | Mul Expr Expr
   | Sub Expr Expr
   | Div Expr Expr
-  deriving (Show)
+  deriving (Eq, Show)
 
 data BExpr =
   IsZero Expr

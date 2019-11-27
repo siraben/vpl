@@ -2,10 +2,7 @@ module VPLParser where
 
 import qualified Control.Applicative as CA
 import Data.Char
-import System.IO
 import Text.ParserCombinators.Parsec hiding (space, spaces)
-import VPLEval
-import VPLPretty
 import VPLTypes
 
 a <||> b = try a <|> b
@@ -123,13 +120,3 @@ parseStmt =
   "statement"
 
 parseProg = space >> parseFunDecl `sepBy` space <* eof
-
-parseAndShow :: FilePath -> IO ()
-parseAndShow s = do
-  sample <- openFile s ReadMode
-  s <- hGetContents sample
-  let result = parse parseProg "" s
-  case result of
-    Right res -> mapM_ (putStrLn . renderFunDecl) res >> showTurtle (evProg res)
-    Left err -> print err
-  hClose sample
