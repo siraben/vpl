@@ -12,7 +12,7 @@ tok p = p <* space
 
 eol = char '\n'
 
-comment = symb "--" >> many (noneOf "\n") >> eol
+comment = symb "--" *> many (noneOf "\n") *> eol
 
 whitespace = oneOf " \n\t" <|> comment <?> "whitespace"
 
@@ -31,7 +31,7 @@ nat = read <$> many1 digit
 natural = tok nat
 
 -- |Parse a negative number.
-negnat = char '-' >> (-) 0 <$> natural
+negnat = char '-' *> (negate <$> natural)
 
 integer = negnat <|> natural
 
@@ -44,79 +44,58 @@ specialSubseqp x = x `elem` "+-.@"
 subseqp c = initp c || digitp c || specialSubseqp c
 
 ident =
-  do x <- satisfy initp
-     xs <- many (satisfy subseqp)
-     return (x : xs)
-     <|> string "+" <|>
-  string "-" <|>
-  try (string "...") <?> "identifier"
+  (((:) <$> satisfy initp <*> many (satisfy subseqp)) <|> string "+" <|>
+   string "-") <?>
+  "identifier"
 
 identifier = tok ident
 
 parseBody :: Parser Body
-parseBody = do
-  symb "["
-  x <- sepBy parseStmt (symb ",")
-  symb "]"
-  return x
+parseBody = symb "[" *> sepBy parseStmt (symb ",") <* symb "]"
 
 parseFunDecl :: Parser FunDecl
 parseFunDecl = do
-  (name:args) <- many1 identifier
-  symb "="
+  (name:args) <- many1 identifier <* symb "="
   FunDecl name args <$> parseBody
 
 parseFunCall :: Parser Stmt
-parseFunCall = CA.liftA2 FunCall (tok ident) (many parseExpr)
+parseFunCall = FunCall <$> tok ident <*> many parseExpr
 
 parseFactor :: Parser Expr
 parseFactor =
   (Lit <$> integer) <|> (Var <$> identifier) <|>
-  (symb "(" >> parseExpr <* symb ")")
+  (symb "(" *> parseExpr <* symb ")")
 
 parseTerm :: Parser Expr
 parseTerm =
-  (do a <- parseFactor
-      op <- (symb "*" >> return Mul) <|> (symb "/" >> return Div)
-      op a <$> parseFactor) <||>
+  (((symb "*" *> return Mul) <|> (symb "/" *> return Div)) <*> parseFactor <*>
+   parseFactor) <||>
   parseFactor
 
 parseExpr :: Parser Expr
 parseExpr =
-  ((do a <- parseTerm
-       symb "+"
-       Add a <$> parseTerm) <||>
-   parseTerm) <?>
+  ((Add <$> parseTerm <* symb "+" <*> parseTerm) <||> parseTerm) <?>
   "expression"
 
 parseLoop :: Parser Stmt
-parseLoop = do
-  symb "loop"
-  x <- parseExpr
-  Loop x <$> parseBody
+parseLoop = Loop <$> (symb "loop" *> parseExpr) <*> parseBody
 
 parseBExpr :: Parser BExpr
-parseBExpr = (symb "zero?" >> (IsZero <$> parseExpr)) <?> "boolean expression"
+parseBExpr = (symb "zero?" *> (IsZero <$> parseExpr)) <?> "boolean expression"
 
 parseIf :: Parser Stmt
 parseIf =
-  (do symb "if"
-      p <- parseBExpr
-      symb "then"
-      c <- parseBody
-      symb "else"
-      a <- parseBody
-      return (If p c a)) <?>
+  (If <$> (symb "if" *> parseBExpr) <*> (symb "then" *> parseBody) <*>
+   (symb "else" *> parseBody)) <?>
   "if statement"
 
 parseStmt :: Parser Stmt
 parseStmt =
-  ((symb "○" >> return PenUp) <|>
-   (symb "●" >> return PenDown) <|>
-   (symb "↑" >> (Forward <$> parseExpr)) <|>
-   (symb "↻" >> (TurnRight <$> parseExpr)) <|>
-   (symb "↺" >> (TurnLeft <$> parseExpr)) <|>
+  ((symb "○" *> return PenUp) <|> (symb "●" *> return PenDown) <|>
+   (symb "↑" *> (Forward <$> parseExpr)) <|>
+   (symb "↻" *> (TurnRight <$> parseExpr)) <|>
+   (symb "↺" *> (TurnLeft <$> parseExpr)) <|>
    parseIf <||> parseLoop <||> parseFunCall) <?>
   "statement"
 
-parseProg = space >> parseFunDecl `sepBy` space <* eof
+parseProg = space *> parseFunDecl `sepBy` space <* eof

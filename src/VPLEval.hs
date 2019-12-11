@@ -28,9 +28,9 @@ evalExpr (Var s) e = do
   case v of
     V f -> return f
     _ -> throwError ("Cannot treat function as expression in " ++ s)
-evalExpr (Add a b) e = liftM2 (+) (evalExpr a e) (evalExpr b e)
-evalExpr (Sub a b) e = liftM2 (-) (evalExpr a e) (evalExpr b e)
-evalExpr (Mul a b) e = liftM2 (*) (evalExpr a e) (evalExpr b e)
+evalExpr (Add a b) e = (+) <$> evalExpr a e <*> evalExpr b e
+evalExpr (Sub a b) e = (-) <$> evalExpr a e <*> evalExpr b e
+evalExpr (Mul a b) e = (*) <$> evalExpr a e <*> evalExpr b e
 evalExpr x@(Div a b) e = do
   a <- evalExpr a e
   b <- evalExpr b e
