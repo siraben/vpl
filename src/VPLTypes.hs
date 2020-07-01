@@ -4,12 +4,9 @@ module VPLTypes where
 
 import Control.Monad.Except
 import Control.Monad.RWS
-import Control.Monad.State
 
 import qualified Data.Map.Strict as Map
 import Graphics.Gloss
-import qualified Graphics.Gloss.Data.Point.Arithmetic as P
-import Graphics.Gloss.Data.Vector
 
 type Args = [String]
 

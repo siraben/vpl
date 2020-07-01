@@ -7,8 +7,10 @@ import VPLTypes
 renderFunDecl :: FunDecl -> String
 renderFunDecl f = renderStyle defaultStyle (prettyFunDecl f)
 
+render :: Doc -> String
 render = renderStyle defaultStyle
 
+defaultStyle :: Style
 defaultStyle = Style {mode = PageMode, lineLength = 100, ribbonsPerLine = 1.5}
 
 prettyFunDecl :: FunDecl -> Doc

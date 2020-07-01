@@ -2,9 +2,9 @@ module VPLEval where
 
 import Control.Monad.Except
 import Control.Monad.RWS
-import Control.Monad.State
 import Data.Fixed
 import Data.List
+import Data.Function
 import qualified Data.Map.Strict as Map
 import Graphics.Gloss
 import qualified Graphics.Gloss.Data.Point.Arithmetic as P
@@ -32,16 +32,19 @@ evalExpr (Add a b) e = (+) <$> evalExpr a e <*> evalExpr b e
 evalExpr (Sub a b) e = (-) <$> evalExpr a e <*> evalExpr b e
 evalExpr (Mul a b) e = (*) <$> evalExpr a e <*> evalExpr b e
 evalExpr x@(Div a b) e = do
-  a <- evalExpr a e
-  b <- evalExpr b e
-  if b == 0
+  a' <- evalExpr a e
+  b' <- evalExpr b e
+  if b' == 0
     then throwError ("Error: divide by 0 in (" ++ render (prettyExpr x) ++ ")")
-    else return (a / b)
+    else return (a' / b')
 
-evalBExpr (IsZero x) e = (== 0) . floor <$> evalExpr x e
+evalBExpr :: BExpr -> Env -> Turtle Bool
+evalBExpr (IsZero x) e = (== (0 :: Integer)) . floor <$> evalExpr x e
 
+penUp :: Turtle ()
 penUp = modify (\s -> s {pen = Up})
 
+penDown :: Turtle ()
 penDown = modify (\s -> s {pen = Down})
 
 evalStmt :: Stmt -> Env -> Turtle ()
@@ -57,7 +60,7 @@ evalStmt s@(FunCall n a) u = do
     V _ ->
       throwError
         ("Cannot apply value in function call (" ++ render (prettyStmt s) ++ ")")
-    Function f -> f (Lit <$> args)
+    Function f' -> f' (Lit <$> args)
 evalStmt (Loop n b) u = do
   x <- evalExpr n u
   replicateM_ (floor x) (mapM_ (`evalStmt` u) b)
@@ -82,6 +85,7 @@ rotateTurtle a = do
   d <- gets direction
   modify (\s -> s {direction = mod' (d + degToRad a) (2 * pi)})
 
+degToRad :: Floating a => a -> a
 degToRad x = (x / 360) * (2 * pi)
 
 -- |Move forward.  If the pen is down, a line is drawn.
@@ -143,8 +147,9 @@ evProg :: [FunDecl] -> Either String Picture
 evProg l =
   case finalEnv Map.!? "main" of
     Nothing -> Left "Must have a main routine"
+    Just (V _) -> Left "Main must be a function"
     Just (Function t) ->
-      case runRWS (runExceptT (runTurtle (t []))) finalEnv initState of
+      case t [] & runTurtle & runExceptT & (\x -> runRWS x finalEnv initState) of
         (Left e, _, _) -> Left e
         (_, _, p) -> Right p
   where
