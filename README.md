@@ -24,7 +24,7 @@ a _LOGO_-like language for the 21st century.
 right = [ ↻ 90 ]
 left  = [ ↺ 90 ]
 -- Draw a square
-□ n = [ loop 3 [↑ n, right], ↑ n, right]
+□ n = [ loop 4 [↑ n, right]]
 -- Draw a triangle
 △ n = [ ↻ 30, ↑ n, ↻ 120, ↑ n, ↻ 120, ↑ n, right ]
 main = [ ●, △ 60, □ 60, right, □ 70, right, □ 80, ↑ 150,
