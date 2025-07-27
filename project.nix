@@ -1,4 +1,4 @@
-{ mkDerivation, base, parsec, gloss, stdenv }:
+{ mkDerivation, base, containers, parsec, gloss, pretty, effectful, effectful-core, stdenv }:
 
 mkDerivation {
   pname = "vpl";
@@ -6,7 +6,7 @@ mkDerivation {
   src = ./.;
   isLibrary = false;
   isExecutable = true;
-  executableHaskellDepends = [ base parsec gloss ];
+  executableHaskellDepends = [ base containers parsec gloss pretty effectful effectful-core ];
   license = "mit";
   hydraPlatforms = stdenv.lib.platforms.none;
 }

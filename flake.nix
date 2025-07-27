@@ -1,7 +1,7 @@
 {
   description = "zkeme80";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/854b5340529bef34fe98b8ed91eff95ee5bf03fd";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
     flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
   };
