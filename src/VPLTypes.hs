@@ -2,6 +2,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module VPLTypes where
 
@@ -69,10 +71,40 @@ data Value
 
 type Env = Map.Map String Value
 
-type Turtle = Eff '[Error String, State TurtleST, Writer Picture, Reader Env]
+-- | A function callable in the VPL language
+type VPLFunction = [Expr] -> Turtle ()
 
-runTurtle :: Turtle a -> Env -> TurtleST -> (Either String (a, TurtleST, Picture))
-runTurtle action env st = 
+data VPLError
+  = UndefinedVariable String
+  | NotAFunction String
+  | NotAValue String
+  | DivisionByZero String
+  | InvalidArgumentCount String Int Int
+  | NoMainFunction
+  | MainNotFunction
+  deriving (Show, Eq)
+
+-- | The effects needed for turtle graphics
+type TurtleEffects = '[Error VPLError, State TurtleST, Writer Picture, Reader Env]
+
+-- | The turtle monad
+type Turtle = Eff TurtleEffects
+
+-- | Constraint for functions that work with any effect stack containing turtle effects
+type TurtleConstraints es = 
+  ( Error VPLError :> es
+  , State TurtleST :> es
+  , Writer Picture :> es
+  , Reader Env :> es
+  )
+
+-- | Run the turtle computation with all effects handled
+runTurtle :: Turtle a -> Env -> TurtleST -> Either String (a, TurtleST, Picture)
+runTurtle action env st = runTurtlePure action env st
+
+-- | Pure runner for turtle computations
+runTurtlePure :: Turtle a -> Env -> TurtleST -> Either String (a, TurtleST, Picture)
+runTurtlePure action env st = 
   runPureEff $ do
     result <- runReader env 
             . runWriter 
@@ -80,5 +112,17 @@ runTurtle action env st =
             . runErrorNoCallStack 
             $ action
     case result of
-      (((Left e, _), _)) -> return (Left e)
+      (((Left e, _), _)) -> return (Left (formatError e))
       (((Right a, s), w)) -> return (Right (a, s, w))
+
+-- | Format an error for display
+formatError :: VPLError -> String
+formatError (UndefinedVariable var) = "Undefined variable: " ++ var
+formatError (NotAFunction name) = "'" ++ name ++ "' is not a function"
+formatError (NotAValue name) = "'" ++ name ++ "' is not a value"
+formatError (DivisionByZero expr) = "Division by zero in: " ++ expr
+formatError (InvalidArgumentCount name expected got) = 
+  "Function '" ++ name ++ "' expects " ++ show expected ++ 
+  " arguments but got " ++ show got
+formatError NoMainFunction = "No main function defined"
+formatError MainNotFunction = "main must be a function"

@@ -9,6 +9,7 @@ import VPLParser
 import VPLEval
 import VPLTypes
 
+main :: IO ()
 main = do
   l <- getArgs
   if length l /= 1

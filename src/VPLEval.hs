@@ -27,7 +27,7 @@ gameWindow = InWindow "VPL Turtle" (200, 200) (10, 10)
 envLookup :: String -> Env -> Turtle Value
 envLookup s e =
   case e Map.!? s of
-    Nothing -> throwError ("Undefined variable: " ++ s)
+    Nothing -> throwError (UndefinedVariable s)
     Just v -> return v
 
 evalExpr :: Expr -> Env -> Turtle Float
@@ -36,7 +36,7 @@ evalExpr (Var s) e = do
   v <- envLookup s e
   case v of
     V f -> return f
-    _ -> throwError ("Cannot treat function as expression in " ++ s)
+    _ -> throwError (NotAValue s)
 evalExpr (Add a b) e = (+) <$> evalExpr a e <*> evalExpr b e
 evalExpr (Sub a b) e = (-) <$> evalExpr a e <*> evalExpr b e
 evalExpr (Mul a b) e = (*) <$> evalExpr a e <*> evalExpr b e
@@ -44,7 +44,7 @@ evalExpr x@(Div a b) e = do
   a' <- evalExpr a e
   b' <- evalExpr b e
   if b' == 0
-    then throwError ("Error: divide by 0 in (" ++ render (prettyExpr x) ++ ")")
+    then throwError (DivisionByZero (render (prettyExpr x)))
     else return (a' / b')
 
 evalBExpr :: BExpr -> Env -> Turtle Bool
@@ -66,9 +66,7 @@ evalStmt s@(FunCall n a) u = do
   f <- envLookup n u
   args <- mapM (`evalExpr` u) a
   case f of
-    V _ ->
-      throwError
-        ("Cannot apply value in function call (" ++ render (prettyStmt s) ++ ")")
+    V _ -> throwError (NotAFunction n)
     Function f' -> f' (Lit <$> args)
 evalStmt (Loop n b) u = do
   x <- evalExpr n u
@@ -134,18 +132,7 @@ evFunDecl :: FunDecl -> Env -> TurtleFunc
 evFunDecl (FunDecl name args body) u =
   \unEvArgs ->
     if length unEvArgs /= argLen
-      then throwError
-             (concat
-                [ "Invalid number of arguments to "
-                , name
-                , ", expected "
-                , show argLen
-                , " but got "
-                , show $ length unEvArgs
-                , " in ("
-                , render (prettyStmt (FunCall name unEvArgs))
-                , ")"
-                ])
+      then throwError (InvalidArgumentCount name argLen (length unEvArgs))
       else do
         realArgs <- mapM (`evalExpr` u) unEvArgs
         mapM_ (`evalStmt` extEnv (zip args (V <$> realArgs)) u) body
@@ -155,8 +142,8 @@ evFunDecl (FunDecl name args body) u =
 evProg :: [FunDecl] -> Either String Picture
 evProg l =
   case finalEnv Map.!? "main" of
-    Nothing -> Left "Must have a main routine"
-    Just (V _) -> Left "Main must be a function"
+    Nothing -> Left (formatError NoMainFunction)
+    Just (V _) -> Left (formatError MainNotFunction)
     Just (Function t) ->
       case runTurtle (t []) finalEnv initState of
         Left e -> Left e
