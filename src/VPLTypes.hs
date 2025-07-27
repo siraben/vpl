@@ -1,9 +1,15 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeApplications #-}
 
 module VPLTypes where
 
-import Control.Monad.Except
-import Control.Monad.RWS
+import Effectful
+import Effectful.Error.Static
+import Effectful.Reader.Static
+import Effectful.State.Static.Local
+import Effectful.Writer.Static.Local
 
 import qualified Data.Map.Strict as Map
 import Graphics.Gloss
@@ -63,15 +69,16 @@ data Value
 
 type Env = Map.Map String Value
 
-newtype Turtle a =
-  Turtle
-    { runTurtle :: ExceptT String (RWS Env Picture TurtleST) a
-    }
-  deriving ( Functor
-           , Applicative
-           , Monad
-           , MonadState TurtleST
-           , MonadWriter Picture
-           , MonadReader Env
-           , MonadError String
-           )
+type Turtle = Eff '[Error String, State TurtleST, Writer Picture, Reader Env]
+
+runTurtle :: Turtle a -> Env -> TurtleST -> (Either String (a, TurtleST, Picture))
+runTurtle action env st = 
+  runPureEff $ do
+    result <- runReader env 
+            . runWriter 
+            . runState st 
+            . runErrorNoCallStack 
+            $ action
+    case result of
+      (((Left e, _), _)) -> return (Left e)
+      (((Right a, s), w)) -> return (Right (a, s, w))

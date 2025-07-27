@@ -1,7 +1,16 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeApplications #-}
+
 module VPLEval where
 
-import Control.Monad.Except
-import Control.Monad.RWS
+import Effectful
+import Effectful.Error.Static
+import Effectful.Reader.Static
+import Effectful.State.Static.Local
+import Effectful.Writer.Static.Local
+import Effectful.Dispatch.Static
+import Control.Monad
 import Data.Fixed
 import Data.List
 import Data.Function
@@ -114,9 +123,9 @@ square n = do
 
 runGame :: Turtle a -> Picture
 runGame t =
-  case runRWS (runExceptT (runTurtle t)) mempty initState of
-    (Left s, _, _) -> Text s
-    (_, _, p) -> p
+  case runTurtle t mempty initState of
+    Left s -> Text s
+    Right (_, _, p) -> p
 
 extEnv :: [(String, Value)] -> Env -> Env
 extEnv new orig = foldl' (\m (k, v) -> Map.insert k v m) orig new
@@ -149,9 +158,9 @@ evProg l =
     Nothing -> Left "Must have a main routine"
     Just (V _) -> Left "Main must be a function"
     Just (Function t) ->
-      case t [] & runTurtle & runExceptT & (\x -> runRWS x finalEnv initState) of
-        (Left e, _, _) -> Left e
-        (_, _, p) -> Right p
+      case runTurtle (t []) finalEnv initState of
+        Left e -> Left e
+        Right (_, _, p) -> Right p
   where
     finalEnv =
       foldl'
