@@ -1,6 +1,9 @@
+-- | Main entry point for the VPL interpreter
+--   Handles command-line arguments, file parsing, and program execution.
 module Main where
 
 import Prelude
+import Control.Exception (catch, IOException)
 import System.Environment
 import System.IO
 import Text.ParserCombinators.Parsec hiding (space, spaces)
@@ -11,10 +14,10 @@ import VPLTypes
 
 main :: IO ()
 main = do
-  l <- getArgs
-  if length l /= 1
-    then putStrLn "Usage ./vpl <file>"
-    else parseAndShow (head l)
+  args <- getArgs
+  case args of
+    [filepath] -> parseAndShow filepath
+    _ -> putStrLn "Usage: vpl <file>"
 
 parseAndShow :: FilePath -> IO ()
 parseAndShow s = do

@@ -2,18 +2,17 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeApplications #-}
 
+-- | Evaluator for the VPL (Visual Programming Language)
+--   This module implements the turtle graphics interpreter,
+--   including statement evaluation and picture generation.
 module VPLEval where
 
-import Effectful
 import Effectful.Error.Static
-import Effectful.Reader.Static
 import Effectful.State.Static.Local
 import Effectful.Writer.Static.Local
-import Effectful.Dispatch.Static
 import Control.Monad
 import Data.Fixed
 import Data.List
-import Data.Function
 import qualified Data.Map.Strict as Map
 import Graphics.Gloss
 import qualified Graphics.Gloss.Data.Point.Arithmetic as P
@@ -21,8 +20,25 @@ import Graphics.Gloss.Data.Vector
 import VPLPretty
 import VPLTypes
 
-gameWindow :: Display
-gameWindow = InWindow "VPL Turtle" (200, 200) (10, 10)
+-- Configuration constants
+windowTitle :: String
+windowTitle = "VPL"
+
+windowSize :: (Int, Int)
+windowSize = (200, 200)
+
+windowPosition :: (Int, Int)
+windowPosition = (10, 10)
+
+scaleFactor :: Float
+scaleFactor = 3.0
+
+initialDirection :: Float
+initialDirection = -(pi / 2)
+
+initialPosition :: Point
+initialPosition = (0, 0)
+
 
 envLookup :: String -> Env -> Turtle Value
 envLookup s e =
@@ -62,7 +78,7 @@ evalStmt PenDown _ = penDown
 evalStmt (Forward e) u = evalExpr e u >>= moveForward
 evalStmt (TurnLeft e) u = evalExpr e u >>= rotateTurtle
 evalStmt (TurnRight e) u = evalExpr e u >>= rotateTurtle <$> negate
-evalStmt s@(FunCall n a) u = do
+evalStmt (FunCall n a) u = do
   f <- envLookup n u
   args <- mapM (`evalExpr` u) a
   case f of
@@ -106,24 +122,7 @@ moveForward f = do
     Up -> return ()
     Down -> lineFrom old
 
-square :: Float -> Turtle ()
-square n = do
-  penDown
-  moveForward n
-  rotateTurtle 90
-  moveForward n
-  rotateTurtle 90
-  moveForward n
-  rotateTurtle 90
-  moveForward n
-  rotateTurtle 90
-  penUp
 
-runGame :: Turtle a -> Picture
-runGame t =
-  case runTurtle t mempty initState of
-    Left s -> Text s
-    Right (_, _, p) -> p
 
 extEnv :: [(String, Value)] -> Env -> Env
 extEnv new orig = foldl' (\m (k, v) -> Map.insert k v m) orig new
@@ -139,11 +138,11 @@ evFunDecl (FunDecl name args body) u =
   where
     argLen = length args
 
-evProg :: [FunDecl] -> Either String Picture
+evProg :: [FunDecl] -> Either VPLError Picture
 evProg l =
   case finalEnv Map.!? "main" of
-    Nothing -> Left (formatError NoMainFunction)
-    Just (V _) -> Left (formatError MainNotFunction)
+    Nothing -> Left NoMainFunction
+    Just (V _) -> Left MainNotFunction
     Just (Function t) ->
       case runTurtle (t []) finalEnv initState of
         Left e -> Left e
@@ -155,10 +154,10 @@ evProg l =
         mempty
         l
 
-showTurtle :: Either String Picture -> IO ()
+showTurtle :: Either VPLError Picture -> IO ()
 showTurtle (Right p) =
-  display (InWindow "VPL" (200, 200) (10, 10)) white (scale 3 3 p)
-showTurtle (Left err) = putStrLn ("Error: " ++ err)
+  display (InWindow windowTitle windowSize windowPosition) white (scale scaleFactor scaleFactor p)
+showTurtle (Left err) = putStrLn ("Error: " ++ formatError err)
 
 initState :: TurtleST
-initState = TurtleST {pos = (0, 0), direction = -(pi / 2), pen = Up}
+initState = TurtleST {pos = initialPosition, direction = initialDirection, pen = Up}

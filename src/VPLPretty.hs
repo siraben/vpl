@@ -1,3 +1,6 @@
+-- | Pretty printer for the VPL (Visual Programming Language)
+--   This module provides functions to format VPL syntax trees
+--   as readable text output.
 module VPLPretty where
 
 import Prelude hiding ((<>))

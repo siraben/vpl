@@ -5,6 +5,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
 
+-- | Core types and effects for the VPL (Visual Programming Language)
+--   This module defines the abstract syntax tree, turtle state,
+--   error types, and effect handling for the VPL interpreter.
 module VPLTypes where
 
 import Effectful
@@ -16,27 +19,33 @@ import Effectful.Writer.Static.Local
 import qualified Data.Map.Strict as Map
 import Graphics.Gloss
 
+-- | Function argument names
 type Args = [String]
 
+-- | Function name
 type FunName = String
 
+-- | Function body (sequence of statements)
 type Body = [Stmt]
 
+-- | Function declaration with name, arguments, and body
 data FunDecl =
   FunDecl FunName Args Body
   deriving (Show)
 
+-- | Arithmetic expressions
 data Expr
-  = Var String
-  | Lit Float
-  | Add Expr Expr
-  | Mul Expr Expr
-  | Sub Expr Expr
-  | Div Expr Expr
+  = Var String      -- ^ Variable reference
+  | Lit Float       -- ^ Numeric literal
+  | Add Expr Expr   -- ^ Addition
+  | Mul Expr Expr   -- ^ Multiplication
+  | Sub Expr Expr   -- ^ Subtraction
+  | Div Expr Expr   -- ^ Division
   deriving (Eq, Show)
 
+-- | Boolean expressions
 data BExpr =
-  IsZero Expr
+  IsZero Expr       -- ^ Test if expression equals zero
   deriving (Show)
 
 data Stmt
@@ -82,6 +91,8 @@ data VPLError
   | InvalidArgumentCount String Int Int
   | NoMainFunction
   | MainNotFunction
+  | ParseError String
+  | FileError String
   deriving (Show, Eq)
 
 -- | The effects needed for turtle graphics
@@ -99,12 +110,8 @@ type TurtleConstraints es =
   )
 
 -- | Run the turtle computation with all effects handled
-runTurtle :: Turtle a -> Env -> TurtleST -> Either String (a, TurtleST, Picture)
-runTurtle action env st = runTurtlePure action env st
-
--- | Pure runner for turtle computations
-runTurtlePure :: Turtle a -> Env -> TurtleST -> Either String (a, TurtleST, Picture)
-runTurtlePure action env st = 
+runTurtle :: Turtle a -> Env -> TurtleST -> Either VPLError (a, TurtleST, Picture)
+runTurtle action env st = 
   runPureEff $ do
     result <- runReader env 
             . runWriter 
@@ -112,7 +119,7 @@ runTurtlePure action env st =
             . runErrorNoCallStack 
             $ action
     case result of
-      (((Left e, _), _)) -> return (Left (formatError e))
+      (((Left e, _), _)) -> return (Left e)
       (((Right a, s), w)) -> return (Right (a, s, w))
 
 -- | Format an error for display
@@ -126,3 +133,5 @@ formatError (InvalidArgumentCount name expected got) =
   " arguments but got " ++ show got
 formatError NoMainFunction = "No main function defined"
 formatError MainNotFunction = "main must be a function"
+formatError (ParseError msg) = "Parse error: " ++ msg
+formatError (FileError msg) = "File error: " ++ msg
